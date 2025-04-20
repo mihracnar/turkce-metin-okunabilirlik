@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Türkçe Metin Okunabilirlik Analiz Aracı</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        
+        .input-area {
+            margin-bottom: 20px;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        #cleanBtn {
+            background-color: #27ae60;
+        }
+        
+        #cleanBtn:hover {
+            background-color: #219653;
+        }
+        
+        .results {
+            margin-top: 30px;
+        }
+        
+        .result-card {
+            background-color: #f8f9fa;
+            border-left: 5px solid #3498db;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .result-card h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        
+        .metrics {
+            margin-top: 20px;
+            background-color: #f0f7ff;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .metric-item {
+            margin-bottom: 10px;
+        }
+        
+        .metric-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 250px;
+        }
+        
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .result-table th, .result-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .result-table th {
+            background-color: #f2f2f2;
+        }
+        
+        .level-easy {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .level-medium {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .level-hard {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        
+        .debug-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #777;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Türkçe Metin Okunabilirlik Analiz Aracı</h1>
+        
+        <div class="alert alert-info">
+            Bu araç, girilen Türkçe metnin okunabilirlik düzeyini Ateşman, Çetinkaya-Uzun ve Bezirci-Yılmaz formüllerini kullanarak hesaplar. PDF'den kopyalanan metinlerdeki gereksiz satır sonları ve paragraf atlamaları otomatik olarak temizlenir.
+        </div>
+        
+        <div class="input-area">
+            <textarea id="textInput" placeholder="Analiz etmek istediğiniz Türkçe metni buraya girin (en az 100 kelime önerilir)..."></textarea>
+            <div class="button-group">
+                <button id="analyzeBtn">Analiz Et</button>
+                <button id="clearBtn">Temizle</button>
+                <button id="sampleBtn">Örnek Metin</button>
+                <button id="cleanBtn">Sadece Metni Temizle</button>
+            </div>
+        </div>
+        
+        <div id="cleanedTextContainer" style="display: none;">
+            <h3>Temizlenmiş Metin</h3>
+            <div id="cleanedText" style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #3498db; margin-bottom: 20px;"></div>
+        </div>
+        
+        <div class="results" id="results" style="display: none;">
+            <div class="metrics">
+                <h3>Metin Metrikleri</h3>
+                <div class="metric-item">
+                    <span class="metric-label">Toplam Karakter Sayısı:</span>
+                    <span id="charCount">0</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Kelime Sayısı:</span>
+                    <span id="wordCount">0</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Cümle Sayısı:</span>
+                    <span id="sentenceCount">0</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Hece Sayısı:</span>
+                    <span id="syllableCount">0</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Ortalama Kelime Uzunluğu (Hece):</span>
+                    <span id="avgWordLength">0</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Ortalama Cümle Uzunluğu (Kelime):</span>
+                    <span id="avgSentenceLength">0</span>
+                </div>
+            </div>
+            
+            <div class="result-card">
+                <h3>Ateşman Okunabilirlik Formülü</h3>
+                <p>Okunabilirlik Puanı: <strong id="atesmanScore">0</strong></p>
+                <p>Okunabilirlik Düzeyi: <strong id="atesmanLevel">-</strong></p>
+                
+                <table class="result-table">
+                    <thead>
+                        <tr>
+                            <th>Okunabilirlik Puanı</th>
+                            <th>Okunabilirlik Düzeyi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="level-easy">
+                            <td>90-100</td>
+                            <td>Çok Kolay</td>
+                        </tr>
+                        <tr class="level-easy">
+                            <td>70-89</td>
+                            <td>Kolay</td>
+                        </tr>
+                        <tr class="level-medium">
+                            <td>50-69</td>
+                            <td>Orta Güçlükte</td>
+                        </tr>
+                        <tr class="level-hard">
+                            <td>30-49</td>
+                            <td>Zor</td>
+                        </tr>
+                        <tr class="level-hard">
+                            <td>1-29</td>
+                            <td>Çok Zor</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="result-card">
+                <h3>Çetinkaya-Uzun Okunabilirlik Formülü</h3>
+                <p>Okunabilirlik Puanı: <strong id="cetinkayaScore">0</strong></p>
+                <p>Okunabilirlik Düzeyi: <strong id="cetinkayaLevel">-</strong></p>
+                
+                <table class="result-table">
+                    <thead>
+                        <tr>
+                            <th>Okunabilirlik Puanı</th>
+                            <th>Okunabilirlik Düzeyi</th>
+                            <th>Eğitim Düzeyi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="level-hard">
+                            <td>0-34</td>
+                            <td>Engelli Düzey</td>
+                            <td>10, 11 ve 12. sınıf</td>
+                        </tr>
+                        <tr class="level-medium">
+                            <td>35-50</td>
+                            <td>Eğitsel Okuma</td>
+                            <td>8 ve 9. sınıf</td>
+                        </tr>
+                        <tr class="level-easy">
+                            <td>51+</td>
+                            <td>Bağımsız Okuma</td>
+                            <td>5, 6 ve 7. sınıf</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="result-card">
+                <h3>Bezirci-Yılmaz Okunabilirlik Formülü</h3>
+                <p>Okunabilirlik Puanı: <strong id="bezirciScore">0</strong></p>
+                <p>Okunabilirlik Düzeyi: <strong id="bezirciLevel">-</strong></p>
+                
+                <table class="result-table">
+                    <thead>
+                        <tr>
+                            <th>Okunabilirlik Değeri</th>
+                            <th>Sınıf Düzeyi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="level-easy">
+                            <td>1-8</td>
+                            <td>İlköğretim</td>
+                        </tr>
+                        <tr class="level-medium">
+                            <td>9-12</td>
+                            <td>Lise</td>
+                        </tr>
+                        <tr class="level-hard">
+                            <td>13-16</td>
+                            <td>Lisans</td>
+                        </tr>
+                        <tr class="level-hard">
+                            <td>16+</td>
+                            <td>Akademik</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="debug-info">
+                    <p><strong>Formül Uygulaması:</strong> YOD = √(OKS × ((H3 × 0,84) + (H4 × 1,5) + (H5 × 3,5) + (H6 × 26,35)))</p>
+                    <div id="bezirciDebug">
+                        <p><strong>OKS (Ortalama Kelime Sayısı):</strong> <span id="bezirciOKS">0</span></p>
+                        <p><strong>H3 (3 Heceli Kelime Sayısı):</strong> <span id="bezirciH3">0</span></p>
+                        <p><strong>H4 (4 Heceli Kelime Sayısı):</strong> <span id="bezirciH4">0</span></p>
+                        <p><strong>H5 (5 Heceli Kelime Sayısı):</strong> <span id="bezirciH5">0</span></p>
+                        <p><strong>H6 (6+ Heceli Kelime Sayısı):</strong> <span id="bezirciH6">0</span></p>
+                        <p><strong>Adım 1 (OKS):</strong> <span id="bezirciStep1">0</span></p>
+                        <p><strong>Adım 2 (Hece Çarpanları Toplamı):</strong> <span id="bezirciStep2">0</span></p>
+                        <p><strong>Adım 3 (Çarpım Sonucu):</strong> <span id="bezirciStep3">0</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-warning" id="warningArea" style="display: none;">
+            Lütfen analiz için yeterli uzunlukta bir metin girin (en az 3 cümle ve 30 kelime önerilir).
+        </div>
+        
+        <footer>
+            <p>© 2025 Türkçe Metin Okunabilirlik Analiz Aracı</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM elementlerini seçme
+        const textInput = document.getElementById('textInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const sampleBtn = document.getElementById('sampleBtn');
+        const cleanBtn = document.getElementById('cleanBtn');
+        const resultsDiv = document.getElementById('results');
+        const warningArea = document.getElementById('warningArea');
+        const cleanedTextContainer = document.getElementById('cleanedTextContainer');
+        const cleanedTextDiv = document.getElementById('cleanedText');
+        
+        // Metin temizleme fonksiyonu - PDF'den kopyalanan gereksiz satır sonlarını ve fazla boşlukları temizler
+        function cleanText(text) {
+            // 1. Her şekilde birden fazla boşlukları tek boşluğa indirgeme
+            text = text.replace(/\s+/g, ' ');
+            
+            // 2. Noktalama işaretlerinden sonra boşluk olmadan geçilen yeni satırlar için düzeltme
+            text = text.replace(/([.!?])\s*(\w)/g, '$1 $2');
+            
+            // 3. Cümle ortasında kesilen satırları düzeltme (küçük harfle başlayan satır başları)
+            text = text.replace(/(\w)\s+([a-zçğıöşü])/g, '$1 $2');
+            
+            // 4. Varsa parantezler arasındaki boşlukları düzenleme
+            text = text.replace(/\(\s+/g, '(');
+            text = text.replace(/\s+\)/g, ')');
+            
+            // 5. Fazla başlangıç ve bitiş boşluklarını temizleme
+            return text.trim();
+        }
+        
+        // Sadece metni temizleme
+        function onlyCleanText() {
+            const originalText = textInput.value.trim();
+            
+            if (originalText.length === 0) {
+                alert("Lütfen temizlenecek bir metin girin!");
+                return;
+            }
+            
+            const cleanedText = cleanText(originalText);
+            cleanedTextDiv.textContent = cleanedText;
+            cleanedTextContainer.style.display = 'block';
+            
+            // Temizlenmiş metni tekrar textarea'ya yerleştir
+            textInput.value = cleanedText;
+        }
+        
+        // Türkçe hece sayısı hesaplama fonksiyonu
+        function countSyllables(word) {
+            word = word.toLowerCase().trim();
+            if (word.length <= 0) return 0;
+            
+            // Türkçe sesli harfler
+            const vowels = ['a', 'e', 'ı', 'i', 'o', 'ö', 'u', 'ü', 'â', 'î', 'û'];
+            
+            // Kelimeden noktalama işaretlerini kaldır
+            word = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
+            
+            let syllableCount = 0;
+            let prevIsVowel = false;
+            
+            for (let i = 0; i < word.length; i++) {
+                const isVowel = vowels.includes(word[i]);
+                
+                if (isVowel && !prevIsVowel) {
+                    syllableCount++;
+                }
+                
+                prevIsVowel = isVowel;
+            }
+            
+            // En az bir hece olmalı
+            return syllableCount === 0 ? 1 : syllableCount;
+        }
+        
+        // Cümle sayısını hesaplama
+        function countSentences(text) {
+            // Nokta, soru işareti ve ünlem ile biten cümleleri say
+            const sentenceEnders = text.match(/[.!?]+(\s|$)/g);
+            return sentenceEnders ? sentenceEnders.length : 0;
+        }
+        
+        // 3, 4, 5, 6+ heceli kelimeleri ayırma
+        function categorizeWordsBySyllableCount(words) {
+            const result = {
+                h3: 0, // 3 heceli kelimeler
+                h4: 0, // 4 heceli kelimeler
+                h5: 0, // 5 heceli kelimeler
+                h6plus: 0 // 6 ve daha fazla heceli kelimeler
+            };
+            
+            words.forEach(word => {
+                const syllables = countSyllables(word);
+                
+                if (syllables === 3) {
+                    result.h3++;
+                } else if (syllables === 4) {
+                    result.h4++;
+                } else if (syllables === 5) {
+                    result.h5++;
+                } else if (syllables >= 6) {
+                    result.h6plus++;
+                }
+            });
+            
+            return result;
+        }
+        
+        // Ateşman Okunabilirlik Formülü
+        function calculateAtesmanReadability(avgWordLength, avgSentenceLength) {
+            const score = 198.825 - (40.125 * avgWordLength) - (2.610 * avgSentenceLength);
+            
+            // Skor 0-100 aralığında sınırlandırılır
+            return Math.max(0, Math.min(100, score));
+        }
+        
+        // Ateşman Okunabilirlik Düzeyi
+        function getAtesmanLevel(score) {
+            if (score >= 90) return "Çok Kolay";
+            if (score >= 70) return "Kolay";
+            if (score >= 50) return "Orta Güçlükte";
+            if (score >= 30) return "Zor";
+            return "Çok Zor";
+        }
+        
+        // Çetinkaya-Uzun Okunabilirlik Formülü
+        function calculateCetinkayaReadability(avgWordLength, avgSentenceLength) {
+            return 118.823 - (25.987 * avgWordLength) - (0.971 * avgSentenceLength);
+        }
+        
+        // Çetinkaya-Uzun Okunabilirlik Düzeyi
+        function getCetinkayaLevel(score) {
+            if (score >= 51) return "Bağımsız Okuma (5-7. sınıf)";
+            if (score >= 35) return "Eğitsel Okuma (8-9. sınıf)";
+            return "Engelli Düzey (10-12. sınıf)";
+        }
+        
+        // Bezirci-Yılmaz Okunabilirlik Formülü
+        function calculateBezirciReadability(avgWordsPerSentence, h3, h4, h5, h6plus) {
+            // YOD = √(OKS x ((H3 x 0,84) + (H4 x 1,5) + (H5 x 3,5) + (H6 x 26,35)))
+            const syllableComponent = (h3 * 0.84) + (h4 * 1.5) + (h5 * 3.5) + (h6plus * 26.35);
+            const innerResult = avgWordsPerSentence * syllableComponent;
+            const result = Math.sqrt(innerResult);
+            
+            // Debug bilgileri
+            document.getElementById('bezirciOKS').textContent = avgWordsPerSentence.toFixed(2);
+            document.getElementById('bezirciH3').textContent = h3.toFixed(2);
+            document.getElementById('bezirciH4').textContent = h4.toFixed(2);
+            document.getElementById('bezirciH5').textContent = h5.toFixed(2);
+            document.getElementById('bezirciH6').textContent = h6plus.toFixed(2);
+            document.getElementById('bezirciStep1').textContent = avgWordsPerSentence.toFixed(4);
+            document.getElementById('bezirciStep2').textContent = syllableComponent.toFixed(4);
+            document.getElementById('bezirciStep3').textContent = innerResult.toFixed(4);
+            
+            return result;
+        }
+        
+        // Bezirci-Yılmaz Okunabilirlik Düzeyi
+        function getBezirciLevel(score) {
+            if (score <= 8) return "İlköğretim";
+            if (score <= 12) return "Lise";
+            if (score <= 16) return "Lisans";
+            return "Akademik";
+        }
+        
+        // Metin analizi
+        function analyzeText() {
+            const originalText = textInput.value.trim();
+            
+            // Boş metin kontrolü
+            if (originalText.length === 0) {
+                warningArea.style.display = 'block';
+                resultsDiv.style.display = 'none';
+                cleanedTextContainer.style.display = 'none';
+                return;
+            }
+            
+            // Metni temizle
+            const text = cleanText(originalText);
+            
+            // Temizlenmiş metni göster
+            cleanedTextDiv.textContent = text;
+            cleanedTextContainer.style.display = 'block';
+            
+            // Metin ön işleme
+            const words = text.split(/\s+/).filter(word => word.length > 0);
+            const sentences = countSentences(text);
+            
+            // Çok kısa metin kontrolü
+            if (words.length < 30 || sentences < 3) {
+                warningArea.style.display = 'block';
+                resultsDiv.style.display = 'none';
+                return;
+            }
+            
+            warningArea.style.display = 'none';
+            resultsDiv.style.display = 'block';
+            
+            // Temel metrikleri hesapla
+            const charCount = text.length;
+            const wordCount = words.length;
+            const sentenceCount = sentences;
+            
+            // Hece sayılarını hesapla
+            let totalSyllables = 0;
+            words.forEach(word => {
+                totalSyllables += countSyllables(word);
+            });
+            
+            // Farklı hece sayılı kelimeleri kategorize et
+            const syllableCategories = categorizeWordsBySyllableCount(words);
+            
+            // Ortalama değerleri hesapla
+            const avgWordLength = totalSyllables / wordCount;
+            const avgSentenceLength = wordCount / sentenceCount;
+            
+            // Her bir heceli kelimenin cümlede ortalama sayısı
+            const avgH3PerSentence = syllableCategories.h3 / sentenceCount;
+            const avgH4PerSentence = syllableCategories.h4 / sentenceCount;
+            const avgH5PerSentence = syllableCategories.h5 / sentenceCount;
+            const avgH6PlusPerSentence = syllableCategories.h6plus / sentenceCount;
+            
+            // Formülleri hesapla
+            const atesmanScore = calculateAtesmanReadability(avgWordLength, avgSentenceLength);
+            const cetinkayaScore = calculateCetinkayaReadability(avgWordLength, avgSentenceLength);
+            const bezirciScore = calculateBezirciReadability(
+                avgSentenceLength, 
+                avgH3PerSentence,
+                avgH4PerSentence,
+                avgH5PerSentence,
+                avgH6PlusPerSentence
+            );
+            
+            // Sonuçları güncelle
+            document.getElementById('charCount').textContent = charCount;
+            document.getElementById('wordCount').textContent = wordCount;
+            document.getElementById('sentenceCount').textContent = sentenceCount.toFixed(0);
+            document.getElementById('syllableCount').textContent = totalSyllables;
+            document.getElementById('avgWordLength').textContent = avgWordLength.toFixed(2);
+            document.getElementById('avgSentenceLength').textContent = avgSentenceLength.toFixed(2);
+            
+            document.getElementById('atesmanScore').textContent = atesmanScore.toFixed(2);
+            document.getElementById('atesmanLevel').textContent = getAtesmanLevel(atesmanScore);
+            
+            document.getElementById('cetinkayaScore').textContent = cetinkayaScore.toFixed(2);
+            document.getElementById('cetinkayaLevel').textContent = getCetinkayaLevel(cetinkayaScore);
+            
+            document.getElementById('bezirciScore').textContent = bezirciScore.toFixed(2);
+            document.getElementById('bezirciLevel').textContent = getBezirciLevel(bezirciScore);
+        }
+        
+        // Temizleme fonksiyonu
+        function clearText() {
+            textInput.value = '';
+            resultsDiv.style.display = 'none';
+            warningArea.style.display = 'none';
+            cleanedTextContainer.style.display = 'none';
+        }
+        
+        // Örnek metin
+        function loadSampleText() {
+            textInput.value = `Okunabilirlik formülleri, metin özelinde belli değişkenlerin göz önüne alınarak yapılan hesaplamalarda kullanılan formülleri ifade etmektedir. Okunabilirlik formülleri, kompozisyon benzeri yazılı ödevlerin değerlendirilmesinde kullanılabileceği gibi, ders kitaplarına uygun metin seçme, bireylere ya da gruplara uygun olan kitap belirleme vb. önemli durumlarda kullanılabilir. Başta İngilizce olmak üzere yabancı diller için hazırlanan okunabilirlik formülleri uzun süredir kullanılmasına karşın Türkçe metinleri kapsayan ilk formül 1997 yılında geliştirilmiştir. Okunabilirlik formüllerinin amacı metinlerin okunabilirlik puanlarını belirlemek suretiyle okunabilirlik düzeylerini saptamaktır.`;
+            analyzeText();
+        }
+        
+        // Event Listener'ları
+        analyzeBtn.addEventListener('click', analyzeText);
+        clearBtn.addEventListener('click', clearText);
+        sampleBtn.addEventListener('click', loadSampleText);
+        cleanBtn.addEventListener('click', onlyCleanText);
+        
+        // Enter tuşuna basınca analiz yap
+        textInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                analyzeText();
+            }
+        });
+    </script>
+</body>
+</html>
