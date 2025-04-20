@@ -265,6 +265,17 @@
                         </tr>
                     </tbody>
                 </table>
+                
+                <div class="debug-info">
+                    <p><strong>Formül Uygulaması:</strong> Okunabilirlik = 198,825 - (40,125 × Ortalama Kelime Uzunluğu) - (2,610 × Ortalama Cümle Uzunluğu)</p>
+                    <div id="atesmanDebug">
+                        <p><strong>Ortalama Kelime Uzunluğu (Hece):</strong> <span id="atesmanOKU">0</span></p>
+                        <p><strong>Ortalama Cümle Uzunluğu (Kelime):</strong> <span id="atesmanOCU">0</span></p>
+                        <p><strong>Adım 1 (40,125 × OKU):</strong> <span id="atesmanStep1">0</span></p>
+                        <p><strong>Adım 2 (2,610 × OCU):</strong> <span id="atesmanStep2">0</span></p>
+                        <p><strong>Adım 3 (198,825 - Adım1 - Adım2):</strong> <span id="atesmanStep3">0</span></p>
+                    </div>
+                </div>
             </div>
             
             <div class="result-card">
@@ -298,6 +309,17 @@
                         </tr>
                     </tbody>
                 </table>
+                
+                <div class="debug-info">
+                    <p><strong>Formül Uygulaması:</strong> Okunabilirlik = 118,823 - (25,987 × Ortalama Kelime Uzunluğu) - (0,971 × Ortalama Cümle Uzunluğu)</p>
+                    <div id="cetinkayaDebug">
+                        <p><strong>Ortalama Kelime Uzunluğu (Hece):</strong> <span id="cetinkayaOKU">0</span></p>
+                        <p><strong>Ortalama Cümle Uzunluğu (Kelime):</strong> <span id="cetinkayaOCU">0</span></p>
+                        <p><strong>Adım 1 (25,987 × OKU):</strong> <span id="cetinkayaStep1">0</span></p>
+                        <p><strong>Adım 2 (0,971 × OCU):</strong> <span id="cetinkayaStep2">0</span></p>
+                        <p><strong>Adım 3 (118,823 - Adım1 - Adım2):</strong> <span id="cetinkayaStep3">0</span></p>
+                    </div>
+                </div>
             </div>
             
             <div class="result-card">
@@ -468,7 +490,17 @@
         
         // Ateşman Okunabilirlik Formülü
         function calculateAtesmanReadability(avgWordLength, avgSentenceLength) {
-            const score = 198.825 - (40.125 * avgWordLength) - (2.610 * avgSentenceLength);
+            const step1 = 40.125 * avgWordLength;
+            const step2 = 2.610 * avgSentenceLength;
+            const step3 = 198.825 - step1 - step2;
+            const score = step3;
+            
+            // Debug bilgilerini güncelle
+            document.getElementById('atesmanOKU').textContent = avgWordLength.toFixed(2);
+            document.getElementById('atesmanOCU').textContent = avgSentenceLength.toFixed(2);
+            document.getElementById('atesmanStep1').textContent = step1.toFixed(4);
+            document.getElementById('atesmanStep2').textContent = step2.toFixed(4);
+            document.getElementById('atesmanStep3').textContent = step3.toFixed(4);
             
             // Skor 0-100 aralığında sınırlandırılır
             return Math.max(0, Math.min(100, score));
@@ -485,7 +517,19 @@
         
         // Çetinkaya-Uzun Okunabilirlik Formülü
         function calculateCetinkayaReadability(avgWordLength, avgSentenceLength) {
-            return 118.823 - (25.987 * avgWordLength) - (0.971 * avgSentenceLength);
+            const step1 = 25.987 * avgWordLength;
+            const step2 = 0.971 * avgSentenceLength;
+            const step3 = 118.823 - step1 - step2;
+            const score = step3;
+            
+            // Debug bilgilerini güncelle
+            document.getElementById('cetinkayaOKU').textContent = avgWordLength.toFixed(2);
+            document.getElementById('cetinkayaOCU').textContent = avgSentenceLength.toFixed(2);
+            document.getElementById('cetinkayaStep1').textContent = step1.toFixed(4);
+            document.getElementById('cetinkayaStep2').textContent = step2.toFixed(4);
+            document.getElementById('cetinkayaStep3').textContent = step3.toFixed(4);
+            
+            return score;
         }
         
         // Çetinkaya-Uzun Okunabilirlik Düzeyi
